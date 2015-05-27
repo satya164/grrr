@@ -7,7 +7,7 @@ const Gtk = imports.gi.Gtk;
 const Notify = imports.gi.Notify;
 const Lang = imports.lang;
 
-const APP_NAME = "Grrr";
+const APP_NAME = "Grrr!";
 
 Notify.init(APP_NAME);
 
