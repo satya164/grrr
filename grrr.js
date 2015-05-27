@@ -11,9 +11,12 @@ const APP_NAME = "Grrr!";
 
 Notify.init(APP_NAME);
 
+let gr_name = "custom.gresource";
+let gr_prefix = "/org/gnome/custom";
+
 function GResource() {
-    this._name = "custom.gresource";
-    this._prefix = "/org/gnome/custom";
+    this._name = gr_name;
+    this._prefix = gr_prefix;
 
     this._files = [];
 }
@@ -164,6 +167,70 @@ const Application = new Lang.Class({
             title: APP_NAME,
             show_close_button: true
         });
+
+        // Add options to set the name and the prefix
+        let grid = new Gtk.Grid({
+            column_spacing: 10,
+            row_spacing: 10,
+            margin: 10
+        });
+
+        grid.set_column_homogeneous(true);
+
+        let namelabel = new Gtk.Label({ label: "File name:" });
+
+        namelabel.set_halign(Gtk.Align.END);
+
+        let nameentry = new Gtk.Entry();
+
+        nameentry.connect("changed", () => gr_name = nameentry.get_text());
+
+        nameentry.set_text(gr_name);
+        nameentry.set_placeholder_text("gtk.gresource");
+
+        grid.attach(namelabel, 0, 0, 1, 1);
+        grid.attach_next_to(nameentry, namelabel, Gtk.PositionType.RIGHT, 2, 1);
+
+        let prefixlabel = new Gtk.Label({ label: "Resource prefix:" });
+
+        prefixlabel.set_halign(Gtk.Align.END);
+
+        let prefixentry = new Gtk.Entry();
+
+        prefixentry.set_text(gr_prefix);
+        prefixentry.set_placeholder_text("/org/gnome/custom");
+
+        prefixentry.connect("changed", () => gr_prefix = prefixentry.get_text());
+
+        grid.attach(prefixlabel, 0, 1, 1, 1);
+        grid.attach_next_to(prefixentry, prefixlabel, Gtk.PositionType.RIGHT, 2, 1);
+
+        let button = new Gtk.ToggleButton();
+
+        button.add(new Gtk.Image ({
+            icon_name: "open-menu-symbolic",
+            icon_size: Gtk.IconSize.SMALL_TOOLBAR
+        }));
+
+        button.connect("clicked", () => {
+            if (button.get_active()) {
+                menu.show_all();
+            }
+        });
+
+        let menu = new Gtk.Popover();
+
+        menu.set_relative_to(button);
+
+        menu.connect("closed", () => {
+            if (button.get_active()) {
+                button.set_active(false);
+            }
+        });
+
+        menu.add(grid);
+
+        this._headerbar.pack_end(button);
 
         // Let's set up our window for drag 'n drop
         let dnd = new Gtk.Box();
