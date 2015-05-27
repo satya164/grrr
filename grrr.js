@@ -104,10 +104,17 @@ GResource.prototype.build = function() {
 
         xml += "\t\t";
 
+        let path = this._base.get_relative_path(file)
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;")
+                        .replace(/'/g, "&apos;");
+
         if (/image\//.test(info.get_content_type())) {
-            xml += "<file preprocess='to-pixdata'>" + this._base.get_relative_path(file) + "</file>\n";
+            xml += "<file preprocess='to-pixdata'>" + path + "</file>\n";
         } else {
-            xml += "<file>" + this._base.get_relative_path(file) + "</file>\n";
+            xml += "<file>" + path + "</file>\n";
         }
     }
 
