@@ -11,12 +11,38 @@ const APP_NAME = "Grrr!";
 
 Notify.init(APP_NAME);
 
-let gr_name = "custom.gresource";
-let gr_prefix = "/org/gnome/custom";
+let res_name = "custom.gresource";
+let res_prefix = "/org/gnome/custom";
+
+let config = {};
+
+let config_file = Gio.File.new_for_path(GLib.get_user_data_dir() + "/grrr/config.json");
+
+if (config_file.query_exists(null)) {
+    let size = config_file.query_info("standard::size",
+                                  Gio.FileQueryInfoFlags.NONE,
+                                  null).get_size();
+
+    try {
+        let data = config_file.read(null).read_bytes(size, null).get_data();
+
+        config = JSON.parse(data);
+
+        if (config.res_name) {
+            res_name = config.res_name;
+        }
+
+        if (config.res_prefix) {
+            res_prefix = config.res_prefix;
+        }
+    } catch (e) {
+        printerr(e);
+    }
+}
 
 function GResource() {
-    this._name = gr_name;
-    this._prefix = gr_prefix;
+    this._name = res_name;
+    this._prefix = res_prefix;
 
     this._files = [];
 }
@@ -107,7 +133,7 @@ GResource.prototype.compile = function(cb = () => {}) {
                                         GLib.SpawnFlags.SEARCH_PATH_FROM_ENVP | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
                                         null);
     } catch (e) {
-        print("Failed to run process: " + e.message);
+        printerr(e);
     }
 
     if (ok === false) {
@@ -129,7 +155,7 @@ GResource.prototype.compile = function(cb = () => {}) {
 
                 notification.show();
             } catch (e) {
-                print("Failed to show notification: " + e.message);
+                printerr(e);
             }
 
             cb();
@@ -162,7 +188,7 @@ const Application = new Lang.Class({
 
             this._window.set_icon(icon);
         } catch (e) {
-            print("Failed to load application icon: " + e.message);
+            printerr(e);
         }
 
         this._headerbar = new Gtk.HeaderBar({
@@ -185,9 +211,9 @@ const Application = new Lang.Class({
 
         let nameentry = new Gtk.Entry();
 
-        nameentry.connect("changed", () => gr_name = nameentry.get_text());
+        nameentry.connect("changed", () => res_name = nameentry.get_text());
 
-        nameentry.set_text(gr_name);
+        nameentry.set_text(res_name);
         nameentry.set_placeholder_text("gtk.gresource");
 
         grid.attach(namelabel, 0, 0, 1, 1);
@@ -199,10 +225,10 @@ const Application = new Lang.Class({
 
         let prefixentry = new Gtk.Entry();
 
-        prefixentry.set_text(gr_prefix);
+        prefixentry.set_text(res_prefix);
         prefixentry.set_placeholder_text("/org/gnome/custom");
 
-        prefixentry.connect("changed", () => gr_prefix = prefixentry.get_text());
+        prefixentry.connect("changed", () => res_prefix = prefixentry.get_text());
 
         grid.attach(prefixlabel, 0, 1, 1, 1);
         grid.attach_next_to(prefixentry, prefixlabel, Gtk.PositionType.RIGHT, 2, 1);
@@ -227,6 +253,38 @@ const Application = new Lang.Class({
         menu.connect("closed", () => {
             if (button.get_active()) {
                 button.set_active(false);
+            }
+
+            let write = false;
+
+            if (config.res_name !== res_name) {
+                config.res_name = res_name;
+
+                write = true;
+            }
+
+            if (config.res_prefix !== res_prefix) {
+                config.res_prefix = res_prefix;
+
+                write = true;
+            }
+
+            if (write) {
+                let parent = config_file.get_parent();
+
+                if (parent.query_exists(null)) {
+                    if (config_file.query_exists(null)) {
+                        config_file.delete(null);
+                    }
+                } else {
+                    parent.make_directory_with_parents(null);
+                }
+
+                let outputstream = config_file.create(Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+
+                outputstream.write_all(JSON.stringify(config), null);
+
+                outputstream.close(null);
             }
         });
 
@@ -270,7 +328,7 @@ const Application = new Lang.Class({
 
             gresource.build();
             gresource.compile(() => {
-                let complete = new Gtk.Label({ label: gr_name + " generated!" });
+                let complete = new Gtk.Label({ label: res_name + " generated!" });
 
                 dnd.set_center_widget(complete);
 
