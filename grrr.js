@@ -97,7 +97,7 @@ GResource.prototype.build = function() {
     outputstream.close(null);
 };
 
-GResource.prototype.compile = function() {
+GResource.prototype.compile = function(cb = () => {}) {
     let ok, pid;
 
     try {
@@ -131,6 +131,8 @@ GResource.prototype.compile = function() {
             } catch (e) {
                 print("Failed to show notification: " + e.message);
             }
+
+            cb();
         });
     }
 };
@@ -232,6 +234,12 @@ const Application = new Lang.Class({
 
         this._headerbar.pack_end(button);
 
+        let spinner = new Gtk.Spinner({ active: true });
+
+        spinner.set_size_request(64, 64);
+
+        let label = new Gtk.Label({ label: "Drop files and folders to generate a gresource file!" });
+
         // Let's set up our window for drag 'n drop
         let dnd = new Gtk.Box();
 
@@ -243,6 +251,11 @@ const Application = new Lang.Class({
         dnd.drag_dest_add_text_targets();
 
         dnd.connect("drag_data_received", (s, c, x, y, selection) => {
+
+            dnd.set_center_widget(spinner);
+
+            dnd.show_all();
+
             let gresource = new GResource();
 
             let text = selection.get_text();
@@ -256,12 +269,31 @@ const Application = new Lang.Class({
             }
 
             gresource.build();
-            gresource.compile();
+            gresource.compile(() => {
+                let complete = new Gtk.Label({ label: gr_name + " generated!" });
+
+                dnd.set_center_widget(complete);
+
+                dnd.show_all();
+
+                GLib.timeout_add(GLib.PRIORITY_DEFAULT, 3000, () => {
+                    dnd.set_center_widget(label);
+
+                    dnd.show_all();
+
+                    return false;
+                }, null);
+            });
         });
 
-        let label = new Gtk.Label({ label: "Drop files and folders to generate a gresource file!" });
-
         dnd.set_center_widget(label);
+
+        // Add some styles
+        let css = new Gtk.CssProvider();
+
+        css.load_from_data("* { font-size: large; }");
+
+        dnd.get_style_context().add_provider(css, 0);
 
         this._window.add(dnd);
 
