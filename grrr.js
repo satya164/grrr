@@ -11,8 +11,11 @@ const APP_NAME = "Grrr!";
 
 Notify.init(APP_NAME);
 
-let res_name = "custom.gresource";
-let res_prefix = "/org/gnome/custom";
+const res_name_default = "custom.gresource";
+const res_prefix_default = "/org/gnome/custom";
+
+let res_name = res_name_default;
+let res_prefix = res_prefix_default;
 
 let config = {};
 
@@ -213,8 +216,7 @@ const Application = new Lang.Class({
 
         nameentry.connect("changed", () => res_name = nameentry.get_text());
 
-        nameentry.set_text(res_name);
-        nameentry.set_placeholder_text("gtk.gresource");
+        nameentry.set_placeholder_text(res_name_default);
 
         grid.attach(namelabel, 0, 0, 1, 1);
         grid.attach_next_to(nameentry, namelabel, Gtk.PositionType.RIGHT, 2, 1);
@@ -225,8 +227,7 @@ const Application = new Lang.Class({
 
         let prefixentry = new Gtk.Entry();
 
-        prefixentry.set_text(res_prefix);
-        prefixentry.set_placeholder_text("/org/gnome/custom");
+        prefixentry.set_placeholder_text(res_prefix_default);
 
         prefixentry.connect("changed", () => res_prefix = prefixentry.get_text());
 
@@ -250,10 +251,18 @@ const Application = new Lang.Class({
 
         menu.set_relative_to(button);
 
+        menu.connect("show", () => {
+            nameentry.set_text(res_name);
+            prefixentry.set_text(res_prefix);
+        });
+
         menu.connect("closed", () => {
             if (button.get_active()) {
                 button.set_active(false);
             }
+
+            res_name = res_name || res_name_default;
+            res_prefix = res_prefix || res_prefix_default;
 
             let write = false;
 
