@@ -5,6 +5,8 @@ Grrr! is a small tool to generate gresource files.
 
 Why the name? Well, generating gresource files is boring, and it also starts with "gr" :)
 
+If you don't know what GResource is, check the [official documentation](https://developer.gnome.org/gio/stable/GResource.html).
+
 ## Dependencies
 
 * gjs
