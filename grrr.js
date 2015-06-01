@@ -241,22 +241,22 @@ const Application = new Lang.Class({
         grid.attach(prefixlabel, 0, 1, 1, 1);
         grid.attach_next_to(prefixentry, prefixlabel, Gtk.PositionType.RIGHT, 2, 1);
 
-        let button = new Gtk.ToggleButton();
+        let menubutton = new Gtk.ToggleButton();
 
-        button.add(new Gtk.Image ({
+        menubutton.add(new Gtk.Image ({
             icon_name: "open-menu-symbolic",
             icon_size: Gtk.IconSize.SMALL_TOOLBAR
         }));
 
-        button.connect("clicked", () => {
-            if (button.get_active()) {
+        menubutton.connect("clicked", () => {
+            if (menubutton.get_active()) {
                 menu.show_all();
             }
         });
 
         let menu = new Gtk.Popover();
 
-        menu.set_relative_to(button);
+        menu.set_relative_to(menubutton);
 
         menu.connect("show", () => {
             nameentry.set_text(res_name);
@@ -264,8 +264,8 @@ const Application = new Lang.Class({
         });
 
         menu.connect("closed", () => {
-            if (button.get_active()) {
-                button.set_active(false);
+            if (menubutton.get_active()) {
+                menubutton.set_active(false);
             }
 
             res_name = res_name || res_name_default;
@@ -306,7 +306,7 @@ const Application = new Lang.Class({
 
         menu.add(grid);
 
-        this._headerbar.pack_end(button);
+        this._headerbar.pack_end(menubutton);
 
         let spinner = new Gtk.Spinner({ active: true });
 
@@ -324,22 +324,11 @@ const Application = new Lang.Class({
 
         dnd.drag_dest_add_text_targets();
 
-        dnd.connect("drag_data_received", (s, c, x, y, selection) => {
-
-            dnd.set_center_widget(spinner);
-
-            dnd.show_all();
-
+        let generate = (uris) => {
             let gresource = new GResource();
 
-            let text = selection.get_text();
-
-            if (text) {
-                let uris = text.split("\n").map(u => u.trim()).filter(u => !!u);
-
-                for (let uri of uris) {
-                    gresource.add(Gio.File.new_for_uri(uri));
-                }
+            for (let uri of uris) {
+                gresource.add(Gio.File.new_for_uri(uri));
             }
 
             gresource.build();
@@ -358,9 +347,60 @@ const Application = new Lang.Class({
                     return false;
                 }, null);
             });
+
+        };
+
+        dnd.connect("drag_data_received", (s, c, x, y, selection) => {
+
+            dnd.set_center_widget(spinner);
+
+            dnd.show_all();
+
+            let text = selection.get_text();
+
+            if (text) {
+                generate(text.split("\n").map(u => u.trim()).filter(u => !!u));
+            }
         });
 
         dnd.set_center_widget(label);
+
+        let addbutton = new Gtk.Button();
+
+        addbutton.add(new Gtk.Image ({
+            icon_name: "list-add-symbolic",
+            icon_size: Gtk.IconSize.SMALL_TOOLBAR
+        }));
+
+        addbutton.connect("clicked", () => {
+            let chooser = new Gtk.FileChooserDialog({
+                title: "Select files",
+                action: Gtk.FileChooserAction.OPEN,
+                transient_for: this._window,
+                modal: true
+            });
+
+            chooser.set_select_multiple(true);
+
+            chooser.add_button("Add", Gtk.ResponseType.OK);
+            chooser.add_button("Cancel", Gtk.ResponseType.CANCEL);
+
+            chooser.set_default_response(Gtk.ResponseType.OK);
+
+            chooser.connect("response", (dialog, response) => {
+                if (response === Gtk.ResponseType.OK) {
+                    let uris = dialog.get_uris();
+
+                    generate(uris);
+                }
+
+                dialog.destroy();
+            });
+
+            chooser.run();
+        });
+
+        this._headerbar.pack_start(addbutton);
 
         // Add some styles
         let css = new Gtk.CssProvider();
