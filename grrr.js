@@ -374,8 +374,8 @@ const Application = new Lang.Class({
 
         addbutton.connect("clicked", () => {
             let chooser = new Gtk.FileChooserDialog({
-                title: "Select files",
-                action: Gtk.FileChooserAction.OPEN,
+                title: "Select folders",
+                action: Gtk.FileChooserAction.SELECT_FOLDER,
                 transient_for: this._window,
                 modal: true
             });
@@ -388,13 +388,13 @@ const Application = new Lang.Class({
             chooser.set_default_response(Gtk.ResponseType.OK);
 
             chooser.connect("response", (dialog, response) => {
-                if (response === Gtk.ResponseType.OK) {
-                    let uris = dialog.get_uris();
-
-                    generate(uris);
-                }
+                let uris = dialog.get_uris();
 
                 dialog.destroy();
+
+                if (response === Gtk.ResponseType.OK && uris && uris.length) {
+                    generate(uris);
+                }
             });
 
             chooser.run();
