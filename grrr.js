@@ -243,7 +243,7 @@ const Application = new Lang.Class({
 
         let menubutton = new Gtk.ToggleButton();
 
-        menubutton.add(new Gtk.Image ({
+        menubutton.add(new Gtk.Image({
             icon_name: "open-menu-symbolic",
             icon_size: Gtk.IconSize.SMALL_TOOLBAR
         }));
@@ -367,7 +367,7 @@ const Application = new Lang.Class({
 
         let addbutton = new Gtk.Button();
 
-        addbutton.add(new Gtk.Image ({
+        addbutton.add(new Gtk.Image({
             icon_name: "list-add-symbolic",
             icon_size: Gtk.IconSize.SMALL_TOOLBAR
         }));
